@@ -1,0 +1,63 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Alle Tests
+        run: python3 -m tests.run
+      - name: Kurzer Rauchtest für Balance und Match
+        run: |
+          python3 balance.py --seeds 1
+          python3 -m engine.match bots/fleissig.py bots/hausmeister.py --seed 1
+      - name: Werkstatt startet und antwortet (Zielversion 3.10)
+        if: matrix.python-version == '3.10'
+        run: |
+          python3 start.py --kein-browser --port 8765 &
+          server=$!
+          for i in $(seq 1 30); do
+            if curl -sf -X POST -H 'Content-Type: application/json' \
+                -d '{}' http://127.0.0.1:8765/api/status -o /tmp/status.json; then
+              break
+            fi
+            sleep 0.5
+          done
+          grep -q '"gegner"' /tmp/status.json
+          python3 - <<'PY'
+          import re
+          import urllib.request
+
+          basis = "http://127.0.0.1:8765"
+          with urllib.request.urlopen(basis + "/") as antwort:
+              html = antwort.read().decode("utf-8")
+          adressen = re.findall(r'(?:src|href)="([^"]+)"', html)
+          assert adressen, "index.html verweist auf keine Datei"
+          for adresse in adressen:
+              if not adresse.startswith("/"):
+                  adresse = "/" + adresse
+              with urllib.request.urlopen(basis + adresse) as antwort:
+                  inhalt = antwort.read()
+              assert antwort.status == 200, adresse
+              assert inhalt, "%s kam leer an" % adresse
+          print("Alle %d Verweise sind da." % len(adressen))
+          PY
+          kill "$server"

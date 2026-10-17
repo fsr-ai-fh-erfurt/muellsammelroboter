@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Müllsammel-Roboter Turnier</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="kopf">
+  <div class="marke">
+    <span class="logo">🗑️</span>
+    <div>
+      <h1>Müllsammel-Roboter</h1>
+      <p class="unterzeile" id="unterzeile">Werkstatt</p>
+    </div>
+  </div>
+  <nav class="kopf-knoepfe">
+    <button id="knopf-anleitung" class="flach">Kurzanleitung</button>
+    <button id="knopf-fsr" class="flach">FSR-Modus</button>
+  </nav>
+</header>
+
+<!-- ------------------------------------------------------------ Werkstatt -->
+<main id="werkstatt" class="werkstatt">
+
+  <section class="spalte-links">
+    <div class="karte">
+      <div class="karte-kopf">
+        <h2>Dein Roboter</h2>
+        <input id="teamname" class="teamname" type="text" maxlength="60"
+               placeholder="Teamname" value="Namenloser Roboter">
+      </div>
+
+      <div class="editor-bereich">
+        <div class="zeilennummern" id="zeilennummern"></div>
+        <div class="editor-huelle">
+          <pre class="hervorhebung" id="hervorhebung" aria-hidden="true"></pre>
+          <textarea id="editor" spellcheck="false" autocomplete="off"
+                    autocapitalize="off" aria-label="Regeln deines Roboters"></textarea>
+        </div>
+      </div>
+
+      <div class="werkzeugleiste">
+        <button id="knopf-testlauf" class="haupt">▶ Testlauf</button>
+        <label class="feld">Gegner
+          <select id="gegner"></select>
+        </label>
+        <label class="feld">Seed
+          <input id="seed" type="number" value="1" min="0" step="1">
+        </label>
+        <span class="luecke"></span>
+        <button id="knopf-vorlage" class="flach">Vorlage</button>
+        <button id="knopf-laden" class="flach">Öffnen …</button>
+        <button id="knopf-speichern" class="flach">Speichern</button>
+        <button id="knopf-abgabe" class="flach betont">Abgeben</button>
+        <input id="datei-eingabe" type="file" accept=".py,.txt" hidden>
+      </div>
+
+      <div id="meldungen" class="meldungen" role="status" aria-live="polite"></div>
+    </div>
+
+    <details class="karte referenz" id="referenz">
+      <summary>Befehlsreferenz</summary>
+      <div class="referenz-inhalt" id="referenz-inhalt"></div>
+    </details>
+  </section>
+
+  <div class="teiler" id="teiler" role="separator" aria-orientation="vertical"
+       aria-label="Breite von Editor und Spielfeld" tabindex="0"
+       title="Ziehen (oder Pfeiltasten). Doppelklick setzt zurück."></div>
+
+  <section class="spalte-rechts">
+    <div class="karte feld-karte">
+      <div class="spielfeld-huelle">
+        <canvas id="spielfeld" width="720" height="720" aria-label="Spielfeld"></canvas>
+        <div id="feld-hinweis" class="feld-hinweis">
+          <!-- Der Kasten ist ein Flex-Container; ohne diese Hülle verschluckt er
+               die Leerzeichen zwischen Text und <b>. -->
+          <span>Schreib links deine Regeln und drück <b>Testlauf</b>.</span>
+        </div>
+      </div>
+
+      <div class="wiedergabe" id="wiedergabe" hidden>
+        <button id="knopf-start" class="rund" title="Abspielen"
+                aria-label="Abspielen">▶</button>
+        <button id="knopf-zurueck" class="rund" title="Ein Tick zurück"
+                aria-label="Ein Tick zurück">⏴</button>
+        <button id="knopf-vor" class="rund" title="Ein Tick vor"
+                aria-label="Ein Tick vor">⏵</button>
+        <input id="schieber" type="range" min="0" max="0" value="0">
+        <span class="tickanzeige" id="tickanzeige">0 / 0</span>
+        <label class="feld">Tempo
+          <select id="tempo">
+            <option value="0.5">½×</option>
+            <option value="1" selected>1×</option>
+            <option value="2">2×</option>
+            <option value="4">4×</option>
+            <option value="8">8×</option>
+            <option value="24">24×</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="karte" id="anzeige-karte" hidden>
+      <div id="punktestand" class="punktestand"></div>
+      <div id="regelanzeige" class="regelanzeige"></div>
+      <div id="ereignisse" class="ereignisse"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ------------------------------------------------------------ FSR -->
+<main id="fsr" class="fsr" hidden></main>
+
+<!-- ------------------------------------------------------------ Dialoge -->
+<dialog id="dialog-anleitung">
+  <div class="dialog-inhalt" id="anleitung-inhalt"></div>
+  <form method="dialog"><button class="haupt">Verstanden</button></form>
+</dialog>
+
+<dialog id="dialog-fsr">
+  <form method="dialog" class="dialog-inhalt">
+    <h2>FSR-Modus</h2>
+    <p class="klein">Nur für den FSR erlaubt! :)</p>
+    <input id="fsr-passwort" type="password" placeholder="Passwort" autocomplete="off">
+    <p id="fsr-fehler" class="fehlertext"></p>
+    <menu>
+      <!-- `type="button"`: Sonst löst Enter im Passwortfeld den Abbruch aus,
+           weil Abbrechen der erste Absende-Knopf im Formular wäre. -->
+      <button id="fsr-abbrechen" type="button" class="flach">Abbrechen</button>
+      <button id="fsr-anmelden" value="anmelden" class="haupt">Anmelden</button>
+    </menu>
+  </form>
+</dialog>
+
+<script src="spielfeld.js"></script>
+<script src="arena.js"></script>
+<script src="werkstatt.js"></script>
+<script src="fsr.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

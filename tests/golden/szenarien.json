@@ -1,0 +1,58 @@
+[
+  {
+    "name": "duell_fleissig_rumpelstilzchen",
+    "seed": 1,
+    "ticks": 400,
+    "spieler": 2,
+    "bots": ["bots/fleissig.py", "bots/rumpelstilzchen.py"]
+  },
+  {
+    "name": "duell_fleissig_gegen_sich_selbst",
+    "seed": 7,
+    "ticks": 400,
+    "spieler": 2,
+    "bots": ["bots/fleissig.py", "bots/fleissig.py"]
+  },
+  {
+    "name": "duell_zwei_zufaellige",
+    "seed": 99,
+    "ticks": 200,
+    "spieler": 2,
+    "bots": ["bots/rumpelstilzchen.py", "bots/rumpelstilzchen.py"]
+  },
+  {
+    "name": "gruppe_vier_gemischt",
+    "seed": 5,
+    "ticks": 300,
+    "spieler": 4,
+    "bots": ["bots/fleissig.py", "bots/rumpelstilzchen.py", "bots/fleissig.py", "bots/rumpelstilzchen.py"]
+  },
+  {
+    "name": "duell_langer_lauf",
+    "seed": 20260907,
+    "ticks": 400,
+    "spieler": 2,
+    "bots": ["bots/fleissig.py", "bots/rumpelstilzchen.py"]
+  },
+  {
+    "name": "duell_hausmeister_lauerer",
+    "seed": 13,
+    "ticks": 400,
+    "spieler": 2,
+    "bots": ["bots/hausmeister.py", "bots/lauerer.py"]
+  },
+  {
+    "name": "duell_fassbluffer_hausmeister",
+    "seed": 21,
+    "ticks": 400,
+    "spieler": 2,
+    "bots": ["bots/fassbluffer.py", "bots/hausmeister.py"]
+  },
+  {
+    "name": "presse_testbot_gegen_sich_selbst",
+    "seed": 7,
+    "ticks": 400,
+    "spieler": 2,
+    "bots": ["tests/golden_bots/presse_bot.py", "tests/golden_bots/presse_bot.py"]
+  }
+]

@@ -1,0 +1,22 @@
+# Von Python erzeugt
+__pycache__/
+*.py[cod]
+
+# Zur Laufzeit erzeugte Spielstände: die Ordner gehören ins Repo, ihr Inhalt nicht.
+# (Turnierergebnisse enthalten absolute Pfade vom Rechner der Turnierleitung.)
+abgaben/*
+aufzeichnungen/*
+turnier/*
+!abgaben/.gitkeep
+!aufzeichnungen/.gitkeep
+!turnier/.gitkeep
+
+# Arbeitsdateien der Werkzeuge
+bericht.json
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,164 @@
+{
+  "config": {
+    "_hinweis": "Saemtliche Zahlenwerte des Spiels stehen hier. Im Code darf kein Spielwert fest verdrahtet sein.",
+    "akku": {
+      "kosten_bewegung": 1,
+      "kosten_rammen": 5,
+      "laden_prozent_pro_tick": 10,
+      "langsam_ab": 30,
+      "langsam_modulo": 2,
+      "langsam_rest": 1,
+      "leer_verliert_ladung": true,
+      "max": 100,
+      "start": 100
+    },
+    "balance": {
+      "seeds": 30
+    },
+    "bots": {
+      "kill_nach_ueberzogen": 20,
+      "neustarts_max": 3,
+      "start_zeitlimit_ms": 3000,
+      "zeitlimit_ms": 100
+    },
+    "fsr_passwort": "muell2026",
+    "muell": {
+      "max_auf_feld": 90,
+      "nachschub_anzahl": 1,
+      "nachschub_intervall": 16,
+      "sorten": {
+        "bio": {
+          "anzeige": "Biomuell",
+          "gewicht": 30,
+          "wert": 36
+        },
+        "elektro": {
+          "anzeige": "Elektroschrott",
+          "gewicht": 7,
+          "wert": 160
+        },
+        "metall": {
+          "anzeige": "Metallschrott",
+          "gewicht": 18,
+          "wert": 80
+        },
+        "papier": {
+          "anzeige": "Papiermuell",
+          "gewicht": 45,
+          "wert": 20
+        }
+      },
+      "start_anzahl": 20,
+      "verfall_strafe_max": 40,
+      "verfall_ticks": 150
+    },
+    "presse": {
+      "abschlag_prozent": 20,
+      "anzahl": 3,
+      "dauer_ticks": 2
+    },
+    "radioaktiv": {
+      "anzahl_pro_spieler": 1,
+      "anzeige": "Radioaktiver Abfall",
+      "wert": -240
+    },
+    "rundenende": {
+      "positiv_teiler": 2
+    },
+    "server": {
+      "browser_oeffnen": true,
+      "port": 8000
+    },
+    "spiel": {
+      "breite": 24,
+      "depot_abstand": 2,
+      "hoehe": 24,
+      "kapazitaet": 6,
+      "karten": [
+        {
+          "name": "Freie Fläche",
+          "waende": []
+        },
+        {
+          "name": "Vier Ecken",
+          "waende": [
+            [
+              5,
+              5
+            ],
+            [
+              5,
+              6
+            ]
+          ]
+        },
+        {
+          "name": "Mitte",
+          "waende": [
+            [
+              11,
+              11
+            ]
+          ]
+        }
+      ],
+      "runden_laenge": 400,
+      "sicht_radius": 6
+    },
+    "sprache": {
+      "max_wechsel": 8
+    },
+    "turnier": {
+      "gleichstand_wiederholungen": 3,
+      "gruppen_groesse": 4,
+      "punkte_je_platz": [
+        3,
+        2,
+        1,
+        0
+      ]
+    },
+    "zone": {
+      "faktor": 2,
+      "groesse": 5,
+      "wechsel_alle": 60
+    }
+  },
+  "erwartet": {
+    "abgeliefert": [
+      0,
+      0
+    ],
+    "akku": [
+      0,
+      0
+    ],
+    "positionen": [
+      [
+        1,
+        1
+      ],
+      [
+        19,
+        18
+      ]
+    ],
+    "pruefsumme": "bd3a9c9d7f5965be8b042428de3c97459f713c390608dadb99bf5af4bfdcc201",
+    "punkte": [
+      0,
+      0
+    ],
+    "sieger": null,
+    "unentschieden": true
+  },
+  "szenario": {
+    "bots": [
+      "bots/rumpelstilzchen.py",
+      "bots/rumpelstilzchen.py"
+    ],
+    "name": "duell_zwei_zufaellige",
+    "seed": 99,
+    "spieler": 2,
+    "ticks": 200
+  }
+}

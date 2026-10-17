@@ -1,0 +1,1087 @@
+/* Müllsammel-Roboter Turnier — Oberfläche.
+   Keine externe Schrift, keine externe Bibliothek: alles muss offline laufen. */
+
+:root {
+  --grund: #f4f5f7;
+  --karte: #ffffff;
+  --rand: #d8dbe0;
+  --text: #1c1f24;
+  --gedaempft: #646b76;
+  --akzent: #2f6fed;
+  --akzent-dunkel: #1f57c6;
+  --gut: #197d3f;
+  --warnung: #b26a00;
+  --fehler: #c02626;
+  --spieler1: #2f6fed;
+  --spieler2: #e8590c;
+  --spieler3: #2f9e44;
+  --spieler4: #ae3ec9;
+  --schrift: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "DejaVu Sans Mono", "Liberation Mono", Menlo, Consolas, monospace;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+/* Muss sein: .werkstatt/.fsr/.wiedergabe setzen display, das würde `hidden` aushebeln. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--grund);
+  color: var(--text);
+  font-family: var(--schrift);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 650; }
+h1 { font-size: 1.15rem; }
+h2 { font-size: 1rem; }
+code { font-family: var(--mono); background: #eceef2; padding: 1px 5px; border-radius: 5px; }
+
+/* ------------------------------------------------------------------ Kopf */
+
+.kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 18px;
+  background: var(--karte);
+  border-bottom: 1px solid var(--rand);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.marke { display: flex; align-items: center; gap: 12px; }
+.logo { font-size: 1.7rem; }
+.unterzeile { margin: 0; color: var(--gedaempft); font-size: 0.82rem; }
+.kopf-knoepfe { display: flex; gap: 8px; }
+
+/* ------------------------------------------------------------------ Knöpfe */
+
+button {
+  font: inherit;
+  border-radius: 8px;
+  border: 1px solid var(--rand);
+  background: var(--karte);
+  color: var(--text);
+  padding: 7px 13px;
+  cursor: pointer;
+}
+button:hover { border-color: #b9bec7; background: #fafbfc; }
+button:active { transform: translateY(1px); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.haupt {
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: #fff;
+  font-weight: 600;
+}
+button.haupt:hover { background: var(--akzent-dunkel); border-color: var(--akzent-dunkel); }
+button.betont { border-color: var(--gut); color: var(--gut); font-weight: 600; }
+button.flach { background: transparent; }
+button.rund { width: 38px; padding: 6px 0; text-align: center; }
+
+input, select {
+  font: inherit;
+  padding: 6px 9px;
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  background: var(--karte);
+  color: var(--text);
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.feld { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--gedaempft); }
+.feld input[type=number] { width: 88px; }
+.luecke { flex: 1; }
+
+/* ------------------------------------------------------------------ Layout */
+
+.werkstatt {
+  display: grid;
+  /* Die linke Spalte ist ziehbar: `--spalte-links` setzt werkstatt.js beim Ziehen
+     am Teiler. Ohne die Variable gilt die alte Aufteilung. */
+  grid-template-columns: var(--spalte-links, minmax(430px, 1fr)) auto minmax(340px, 1fr);
+  gap: 16px 8px;
+  padding: 16px;
+  align-items: start;
+}
+.teiler {
+  align-self: stretch;      /* sonst bliebe er bei `align-items: start` ohne Höhe */
+  /* Breite Greiffläche, schmaler Strich: 10 Pixel trifft man mit der Maus nur mit
+     Mühe, gesehen werden sollen aber nur zwei. */
+  width: 16px;
+  cursor: col-resize;
+  position: relative;
+  user-select: none;
+  border-radius: 5px;
+  touch-action: none;       /* sonst scrollt das Tablet, statt zu ziehen */
+}
+.teiler::before {
+  content: '';
+  position: absolute;
+  inset: 0 7px;
+  border-radius: 2px;
+  background: var(--rand);
+  transition: background 0.12s;
+}
+.teiler:hover::before, .teiler:focus-visible::before, .teiler.zieht::before {
+  background: var(--akzent);
+}
+.teiler:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+@media (max-width: 1100px) {
+  .werkstatt { grid-template-columns: 1fr; }
+  .teiler { display: none; }
+}
+
+.spalte-links, .spalte-rechts { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.karte {
+  background: var(--karte);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.karte-kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.teamname { flex: 1; max-width: 280px; }
+
+/* ------------------------------------------------------------------ Editor */
+
+.editor-bereich {
+  display: flex;
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fbfcfd;
+  /* Der Kasten gibt die Höhe vor, nicht sein Inhalt. Ohne das wachsen Nummernspalte
+     und Einfärbung mit dem Text, während der Textbereich bei seiner Höhe bleibt: Dann
+     rollt nur er, und die sichtbare (eingefärbte) Schrift bleibt stehen. Gezogen wird
+     am Kasten, nicht mehr am Textbereich — sonst gilt dasselbe wieder. */
+  height: 420px;
+  min-height: 180px;
+  resize: vertical;
+}
+.zeilennummern {
+  flex: 0 0 auto;
+  padding: 10px 8px 10px 10px;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #9aa1ac;
+  background: #f2f4f7;
+  border-right: 1px solid var(--rand);
+  user-select: none;
+  white-space: pre;
+  overflow: hidden;
+}
+/* Eine Nummer je Textzeile — die Höhe setzt werkstatt.js, damit umgebrochene
+   Zeilen nicht aus dem Takt geraten. */
+.zeilennummern .zn { display: block; }
+.zeilennummern .zn-fehler { color: var(--fehler); font-weight: 700; }
+.zeilennummern .zn-aktiv { color: var(--akzent); font-weight: 700; }
+
+.editor-huelle { position: relative; flex: 1; min-width: 0; }
+.hervorhebung, #editor {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  border: 0;
+  /* Beide füllen den Kasten und rollen darin — die Einfärbung stumm, der
+     Textbereich mit Rollbalken. `werkstatt.js` hält beide auf demselben Stand. */
+  height: 100%;
+  /* Beide brauchen dieselbe Textbreite. Ohne den festen Platz für den Rollbalken
+     bricht der Textbereich früher um als die Einfärbung darunter. */
+  scrollbar-gutter: stable;
+}
+.hervorhebung {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--text);
+  overflow: hidden;
+}
+#editor {
+  position: relative;
+  width: 100%;
+  resize: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text);
+  display: block;
+}
+/* Der Textbereich ist durchsichtig — ohne eigene Auswahlfarbe wäre markierter
+   Text unsichtbar. */
+#editor::selection { background: var(--akzent); color: #fff; }
+.hervorhebung .s-schluessel { color: #a626a4; font-weight: 700; }
+.hervorhebung .s-aktion { color: #1f57c6; font-weight: 600; }
+.hervorhebung .s-ziel { color: #197d3f; }
+.hervorhebung .s-zahl { color: #b26a00; }
+.hervorhebung .s-kommentar { color: #8d949f; font-style: italic; }
+.hervorhebung .s-python { color: #c02626; font-weight: 700; }
+.hervorhebung .zl { display: block; }
+.hervorhebung .zeile-aktiv { background: #fff4c2; border-radius: 3px; }
+
+.werkzeugleiste {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ------------------------------------------------------------------ Meldungen */
+
+.meldungen { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.meldung {
+  padding: 8px 11px;
+  border-radius: 8px;
+  font-size: 0.87rem;
+  border-left: 4px solid;
+  cursor: pointer;
+}
+.meldung.fehler { background: #fdf0f0; border-color: var(--fehler); color: #7c1a1a; }
+.meldung.hinweis { background: #fff8e8; border-color: var(--warnung); color: #7a4a00; }
+.meldung.gut { background: #eefaf1; border-color: var(--gut); color: #14562d; cursor: default; }
+.meldung.lade { background: #eef3fd; border-color: var(--akzent); color: #1b3f8f; cursor: default; }
+.stand-warnung { color: var(--fehler); font-size: 0.85em; }
+.meldung.erklaerung { background: #f3f1fb; border-color: #7b6cc9; color: #352a6b; white-space: pre-line; }
+.fehlertext { color: var(--fehler); font-size: 0.85rem; min-height: 1.2em; margin: 6px 0 0; }
+
+/* ------------------------------------------------------------------ Referenz */
+
+.referenz summary { cursor: pointer; font-weight: 650; }
+.referenz-inhalt { margin-top: 12px; font-size: 0.88rem; }
+.referenz-inhalt h3 { margin: 14px 0 6px; font-size: 0.9rem; color: var(--gedaempft);
+  text-transform: uppercase; letter-spacing: 0.04em; }
+.referenz-inhalt table { width: 100%; border-collapse: collapse; }
+.referenz-inhalt td { padding: 4px 6px; vertical-align: top; border-top: 1px solid #eceef2; }
+.referenz-inhalt td:first-child { width: 42%; }
+.referenz-inhalt code { white-space: nowrap; }
+.referenz-inhalt .beispiel { background: #f7f8fa; border: 1px solid var(--rand);
+  border-radius: 8px; padding: 10px 12px; font-family: var(--mono); font-size: 12.5px;
+  white-space: pre-wrap; }
+
+/* ------------------------------------------------------------------ Spielfeld */
+
+.feld-karte { padding: 12px; }
+.spielfeld-huelle { position: relative; }
+#spielfeld, #fsr-feld {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  background: #eceef2;
+}
+.feld-hinweis {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  color: var(--gedaempft);
+  background: rgba(244, 245, 247, 0.92);
+  border-radius: 8px;
+}
+.wiedergabe { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.wiedergabe input[type=range] { flex: 1; min-width: 140px; }
+.tickanzeige { font-family: var(--mono); font-size: 0.84rem; color: var(--gedaempft); min-width: 76px; }
+
+/* ------------------------------------------------------------------ Anzeigen */
+
+.punktestand { display: flex; flex-wrap: wrap; gap: 10px; }
+.spieler-kachel {
+  flex: 1 1 190px;
+  border: 1px solid var(--rand);
+  border-left-width: 5px;
+  border-radius: 8px;
+  padding: 9px 11px;
+}
+.spieler-kachel .name { font-weight: 650; display: flex; justify-content: space-between; gap: 8px; }
+.spieler-kachel .punkte { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.spieler-kachel .zeile { font-size: 0.8rem; color: var(--gedaempft); display: flex;
+  justify-content: space-between; gap: 8px; }
+/* Ladung und Depot in den Kacheln unter dem Feld (Werkstatt, Einzelmatch). */
+.kachel-block { margin-top: 8px; }
+.kachel-titel { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--gedaempft); margin-bottom: 4px; }
+.kachel-titel.klein { text-transform: none; letter-spacing: 0; margin-top: 6px; }
+.teil-reihe { display: flex; flex-wrap: wrap; gap: 4px; font-size: 14px; }
+.teil-reihe.klein { font-size: 12px; }
+.depot-liste { display: flex; flex-direction: column; gap: 2px; font-size: 14px; max-width: 13em; }
+.balken { height: 5px; border-radius: 3px; background: #e6e8ec; overflow: hidden; margin-top: 4px; }
+.balken > div { height: 100%; background: var(--gut); }
+.balken.leer > div { background: var(--fehler); }
+
+.regelanzeige {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  padding: 9px 11px;
+  background: #f7f8fa;
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  min-height: 38px;
+}
+.regelanzeige .marke { color: var(--gedaempft); font-family: var(--schrift); font-size: 0.78rem;
+  display: block; margin-bottom: 2px; }
+.regelanzeige .kosten { color: var(--gedaempft); font-family: var(--schrift); font-size: 0.78rem;
+  display: block; margin-top: 4px; }
+.ereignisse { margin-top: 8px; font-size: 0.82rem; color: var(--gedaempft);
+  display: flex; flex-wrap: wrap; gap: 6px; min-height: 22px; }
+.ereignis { background: #eef1f6; border-radius: 999px; padding: 2px 10px; }
+.ereignis.rammen { background: #fdecec; color: #7c1a1a; }
+.ereignis.abliefern { background: #eafaef; color: #14562d; }
+.ereignis.zone { background: #fff6d8; color: #7a4a00; }
+
+/* ------------------------------------------------------------------ Dialoge */
+
+dialog {
+  border: 1px solid var(--rand);
+  border-radius: 12px;
+  padding: 0;
+  max-width: 760px;
+  width: calc(100% - 32px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+}
+dialog::backdrop { background: rgba(15, 18, 24, 0.45); }
+.dialog-inhalt { padding: 20px 22px; }
+.dialog-inhalt h2 { margin-bottom: 8px; }
+.dialog-inhalt input { width: 100%; margin-top: 8px; }
+dialog menu { display: flex; justify-content: flex-end; gap: 8px; padding: 0; margin: 16px 0 0; }
+dialog form:not(.dialog-inhalt) { padding: 0 22px 18px; display: flex; justify-content: flex-end; }
+.klein { font-size: 0.85rem; color: var(--gedaempft); }
+
+/* ------------------------------------------------------------------ FSR */
+
+.fsr { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.reiter { display: flex; gap: 6px; flex-wrap: wrap; }
+.reiter button { border-radius: 999px; }
+.reiter button.aktiv { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+.fsr-gitter { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .fsr-gitter { grid-template-columns: 1fr; } }
+table.tabelle { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+table.tabelle th, table.tabelle td { padding: 6px 8px; border-bottom: 1px solid #eceef2; text-align: left; }
+table.tabelle th { color: var(--gedaempft); font-weight: 600; font-size: 0.78rem;
+  text-transform: uppercase; letter-spacing: 0.04em; }
+table.tabelle td.zahl, table.tabelle th.zahl { text-align: right; font-variant-numeric: tabular-nums; }
+table.tabelle tr.hervor { background: #eef3fd; }
+.liste { max-height: 320px; overflow: auto; border: 1px solid var(--rand); border-radius: 8px; }
+.liste label { display: flex; gap: 8px; align-items: center; padding: 6px 10px;
+  border-bottom: 1px solid #f0f1f4; font-size: 0.88rem; }
+.liste label:last-child { border-bottom: 0; }
+.matrix td.stark { background: #e7f6ec; }
+.matrix td.schwach { background: #fdecec; }
+
+/* ------------------------------------------------------------- Turnierbaum */
+
+/* Eine Spalte je Runde. Jede Spalte teilt ihre Höhe gleichmäßig auf ihre Plätze
+   auf; damit steht jede Partie genau mittig zwischen ihren beiden Vorgängern, und
+   die Linien (::after nach rechts, ::before von links) treffen sich ohne Rechnen.
+   Alle Maße in em: In der Show wächst die Schrift mit dem Bildschirm (`--s` an
+   `.ko-flaeche`), im Archiv gilt die normale Schriftgröße. */
+.turnierbaum {
+  --luecke: 1.9em;
+  display: flex;
+  gap: var(--luecke);
+  overflow-x: auto;
+  padding: 0.3em 0.3em 0.6em;
+}
+.baum-spalte { flex: 1 1 0; min-width: 9em; display: flex; flex-direction: column; }
+.baum-spalte h3 {
+  height: 1.6em;
+  margin-bottom: 0.3em;
+  text-align: center;
+  font-size: 0.78em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.baum-slots { flex: 1; display: flex; flex-direction: column; }
+.baum-slot { flex: 1 1 0; position: relative; display: flex; align-items: center; padding: 0.25em 0; }
+.baum-huelle { position: relative; width: 100%; }
+.baum-paar {
+  border: 1px solid var(--rand);
+  border-radius: 0.55em;
+  padding: 0.15em 0.6em;
+  font-size: 0.9em;
+  background: var(--karte);
+}
+.baum-paar .zeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 1.75em;
+}
+.baum-paar .zeile + .zeile { border-top: 1px solid var(--rand); }
+.baum-paar .sieger { font-weight: 700; color: var(--gut); }
+.baum-paar .raus { opacity: 0.5; }
+.baum-paar .offen { color: var(--gedaempft); }
+.baum-paar .mit-logo { gap: 0.5em; }
+.turnierbaum .logo-klein { --logo-groesse: 1.25em; border-radius: 0.3em; }
+.baum-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.baum-punkte { font-variant-numeric: tabular-nums; font-weight: 700; flex: 0 0 auto; }
+.baum-paar.freilos .baum-punkte { font-weight: 400; font-style: italic; color: var(--gedaempft); }
+.baum-spalte:not(.baum-ende) .baum-slot::after {
+  content: '';
+  position: absolute;
+  right: calc(var(--luecke) / -2);
+  width: calc(var(--luecke) / 2);
+  border-right: 2px solid var(--rand);
+}
+.baum-spalte:not(.baum-ende) .baum-slot:nth-child(odd)::after {
+  top: 50%; bottom: 0; border-top: 2px solid var(--rand);
+}
+.baum-spalte:not(.baum-ende) .baum-slot:nth-child(even)::after {
+  top: 0; bottom: 50%; border-bottom: 2px solid var(--rand);
+}
+.baum-spalte:not(.baum-ende) .baum-slot:only-child::after { bottom: auto; height: 0; border-right: 0; }
+.baum-spalte + .baum-spalte .baum-slot::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--luecke) / -2);
+  top: 50%;
+  width: calc(var(--luecke) / 2);
+  border-top: 2px solid var(--rand);
+}
+.baum-platz3 { position: absolute; left: 0; right: 0; top: 100%; margin-top: 1.7em; }
+.baum-platz3-titel {
+  margin-bottom: 0.3em;
+  text-align: center;
+  font-size: 0.72em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.baum-champion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.6em;
+  font-size: 1.05em;
+  border-color: #e8b800;
+  box-shadow: 0 0 0 2px rgba(242, 194, 0, 0.25);
+}
+.baum-champion .logo-mittel { --logo-groesse: 1.6em; }
+.baum-pokal { font-size: 1.4em; }
+/* Auslosung: Die Teams der ersten Runde erscheinen nacheinander (Verzögerung je
+   Zeile setzt fsr.auslosungZeigen), danach der Startknopf. */
+.turnierbaum.auslosung .baum-spalte:first-child .zeile { animation: los-rein 0.5s ease-out both; }
+@keyframes los-rein {
+  from { opacity: 0; transform: translateY(-0.8em) scale(1.25); }
+  60% { opacity: 1; transform: scale(1.05); }
+}
+.ko-aktion.nach-auslosung { animation: banner-rein 0.4s ease-out both; }
+
+/* ------------------------------------------------------------------ Bühne */
+
+/* Die K.-o.-Bühne: Turnierbaum, VS-Bild, eine Partie zur Zeit, Siegertreppe.
+   Gezeichnet wird auf einem eigenen Canvas, den Takt gibt `Buehne` in arena.js vor. */
+
+/* Die Leiste wächst auf großen Schirmen mit, damit sie auf einem 4K-Beamer noch
+   bedienbar ist (Laptop und Full HD: 15 px wie überall). */
+.buehne-kopf {
+  font-size: clamp(15px, calc(0.25vw + 0.3vh + 7px), 26px);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.buehne-titel {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.buehne-knoepfe { margin-top: 0; flex: 0 0 auto; flex-wrap: nowrap; }
+#ko-buehne-karte .buehne-kopf .feld,
+#ko-buehne-karte .buehne-kopf .tickanzeige { font-size: 0.85em; }
+#ko-buehne-karte .buehne-kopf button.rund { width: 2.5em; }
+/* Runde und Spiel stehen während einer Partie klein in der Leiste, damit das
+   Feld die ganze Höhe bekommt. */
+.buehne-info {
+  flex: 1 1 0;
+  min-width: 0;
+  align-self: center;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 1.1em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Auf schmalen Schirmen (4:3) bleibt die Leiste einzeilig: Tickanzeige und das
+   Wort „Tempo" fallen weg, der Schieber wird kürzer. */
+@media (max-width: 1300px) {
+  #buehne-tick, .buehne-tempo-wort { display: none; }
+  #buehne-schieber { width: 90px; }
+}
+.buehne { position: relative; }
+.buehne-raster {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(var(--spalten, 1), minmax(0, 1fr));
+}
+.buehne-raster > .meldung { grid-column: 1 / -1; }
+
+.duell {
+  position: relative;
+  border: 1px solid var(--rand);
+  border-radius: 12px;
+  padding: 8px;
+  background: var(--karte);
+  opacity: 0;
+  transform: translateY(14px) scale(0.97);
+  animation: duell-rein 0.45s ease-out forwards;
+  transition: box-shadow 0.35s, border-color 0.35s, filter 0.35s, opacity 0.35s;
+}
+@keyframes duell-rein {
+  to { opacity: 1; transform: none; }
+}
+.chip {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: #9aa1ac;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+/* Team-Logos: immer quadratisch, egal in welchem Seitenverhältnis die Datei
+   geliefert wurde. Fehlt ein Logo, zeigt die Ersatzkachel den Anfangsbuchstaben.
+   Die Größen stehen hier (nicht im HTML), damit die Beamer-Ansicht sie
+   vergrößern kann. */
+.logo-quadrat {
+  aspect-ratio: 1 / 1;
+  width: var(--logo-groesse, 24px);
+  height: var(--logo-groesse, 24px);
+  border-radius: 6px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  background: #e6e8ec;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+.logo-quadrat.ersatz {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.72em;
+  color: #fff;
+  background: #9aa1ac;
+}
+.logo-klein { --logo-groesse: 18px; }
+.logo-mittel { --logo-groesse: 24px; }
+.logo-gross { --logo-groesse: 28px; }
+/* Die großen Logos der Show wachsen mit ihrer Grundgröße `--s`. */
+.logo-feier { --logo-groesse: calc(var(--s, 20px) * 7); border-radius: 18px; }
+.logo-podest { --logo-groesse: calc(var(--s, 20px) * 5); border-radius: 14px; }
+.logo-vs { --logo-groesse: calc(var(--s, 20px) * 10.5); border-radius: 22px; }
+.logo-seite { --logo-groesse: calc(var(--s, 20px) * 4); border-radius: 14px; }
+/* Der Buchstabe der Ersatzkachel wächst mit der Kachel. */
+.logo-feier.ersatz, .logo-podest.ersatz, .logo-vs.ersatz, .logo-seite.ersatz {
+  font-size: calc(var(--logo-groesse) * 0.5);
+}
+.mit-logo { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.duell-feld { position: relative; }
+.duell-feld canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+  background: #eceef2;
+}
+.duell-live {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #fff;
+  background: rgba(224, 49, 49, 0.92);
+  border-radius: 999px;
+  padding: 2px 8px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.duell-live i { width: 7px; height: 7px; border-radius: 50%; background: #fff; }
+.duell.laeuft .duell-live { opacity: 1; }
+.duell.laeuft .duell-live i { animation: puls 1s infinite; }
+@keyframes puls { 50% { opacity: 0.25; } }
+.duell-fuss { min-height: 22px; margin-top: 5px; font-size: 0.83rem; color: var(--gedaempft); }
+.duell.ohne-bild { opacity: 1; transform: none; animation: none; }
+.duell.ohne-bild .duell-fuss { min-height: 0; padding: 1em; }
+
+.buehne-banner {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
+  border-radius: 12px;
+  color: #fff;
+  background: radial-gradient(ellipse at center, rgba(22, 27, 38, 0.86), rgba(8, 10, 16, 0.96));
+  animation: banner-rein 0.3s ease-out;
+}
+@keyframes banner-rein { from { opacity: 0; } to { opacity: 1; } }
+.buehne-countdown {
+  font-size: clamp(4rem, 18vw, 12rem);
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 60px rgba(91, 140, 245, 0.8);
+  animation: count-rein 0.6s ease-out;
+}
+.buehne-countdown.los { color: #f5c542; }
+@keyframes count-rein {
+  from { transform: scale(1.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+/* Die Schritte der Show. Jeder Bildschirm hat genau einen Hauptknopf
+   (`.ko-hauptknopf`, im HTML `data-aktion`), den auch Tastatur und Clicker drücken.
+
+   `--s` ist die Grundgröße der Show. Sie wächst mit dem Bildschirm (Breite und
+   Höhe zählen beide, damit 4:3 nicht benachteiligt wird) und hat eine
+   Untergrenze: Laptop 15 px, Full HD um 20 px, 4K bis 36 px. Alles darunter ist
+   in em gesetzt und wächst mit. */
+.ko-flaeche {
+  --s: clamp(15px, calc(0.5vw + 0.6vh + 4px), 36px);
+  font-size: var(--s);
+  display: flex;
+  flex-direction: column;
+  min-height: max(460px, calc(100vh - 262px));
+}
+.ko-flaeche > * { flex: 1 1 auto; display: flex; flex-direction: column; }
+.ko-flaeche .buehne-titel { font-size: 1.7em; }
+.ko-flaeche .klein { font-size: 0.75em; }
+.ko-ueberschrift { text-align: center; margin-bottom: 0.5em; }
+.ko-unterzeile { color: var(--gedaempft); font-size: 0.95em; }
+.ko-baumansicht .turnierbaum { flex: 1 1 auto; }
+.ko-aktion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8em;
+  margin-top: 0.9em;
+}
+button.ko-hauptknopf {
+  font-size: 1.1em;
+  padding: 0.6em 1.6em;
+  border-radius: 999px;
+  animation: knopf-puls 1.6s ease-in-out infinite;
+}
+@keyframes knopf-puls {
+  50% { box-shadow: 0 0 0 7px rgba(91, 140, 245, 0.25); }
+}
+
+/* VS-Bild und Vorspann: immer dunkel, wie Countdown und Siegerbanner. */
+.ko-vs, .ko-vorspann {
+  justify-content: center;
+  align-items: center;
+  gap: 0.3em;
+  padding: 1.4em 0.8em;
+  text-align: center;
+  color: #fff;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at center, #1d2433, #0a0d13);
+  overflow: hidden;
+}
+.ko-vs-runde {
+  font-size: 2.6em;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #5b8cf5, #f5c542, #e8590c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ko-vs-info { min-height: 1.4em; color: #aab3c2; letter-spacing: 0.12em; text-transform: uppercase; }
+.ko-vs-paar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5em;
+  width: 100%;
+  margin: 1.2em 0 0.5em;
+}
+.ko-vs-team {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7em;
+}
+.ko-vs-team.links { animation: vs-links 0.6s ease-out both; }
+.ko-vs-team.rechts { animation: vs-rechts 0.6s ease-out both; }
+.ko-vs-team .logo-quadrat { box-shadow: 0 0 50px rgba(91, 140, 245, 0.35); }
+.ko-vs-name { font-size: 2.1em; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
+.ko-vs-mitte {
+  flex: 0 0 auto;
+  font-size: 4.2em;
+  font-weight: 900;
+  font-style: italic;
+  color: #f5c542;
+  text-shadow: 0 0 40px rgba(245, 197, 66, 0.6);
+  animation: vs-knall 0.7s 0.35s ease-out both;
+}
+.ko-vs .ko-lade { color: #aab3c2; }
+@keyframes vs-links { from { opacity: 0; transform: translateX(-60px); } }
+@keyframes vs-rechts { from { opacity: 0; transform: translateX(60px); } }
+@keyframes vs-knall {
+  0% { opacity: 0; transform: scale(2.4); }
+  70% { opacity: 1; transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+.ko-wuerfel { font-size: 5em; line-height: 1.2; animation: wuerfel-dreh 0.45s linear infinite; }
+.ko-wuerfel.steht { animation: wuerfel-steht 0.5s ease-out; }
+@keyframes wuerfel-dreh {
+  0% { transform: rotate(0) scale(1); }
+  50% { transform: rotate(180deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes wuerfel-steht { 0% { transform: scale(1.4); } 100% { transform: scale(1); } }
+.ko-seed { display: flex; gap: 0.12em; margin: 0.2em 0 0.6em; }
+.ko-seed span {
+  width: 0.72em;
+  font-size: 4em;
+  font-weight: 900;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: #7f8aa3;
+  border-bottom: 3px solid #2b3446;
+}
+.ko-seed span.steht { color: #f5c542; animation: ziffer-steht 0.35s ease-out; }
+@keyframes ziffer-steht { from { transform: scale(1.5); } to { transform: scale(1); } }
+.ko-fortschritt .meldung { background: transparent; border: 0; color: #aab3c2; font-size: 0.85em; }
+.ko-fortschritt .meldung.fehler { color: #ffb0b0; }
+
+/* Eine Partie: links und rechts die Teams mit Punkten, Ladung und Depot, in der
+   Mitte das Feld über die ganze Höhe. Die Feldgröße rechnet fsr.arenaPlatz aus. */
+.ko-arena {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 24px;
+  align-items: stretch;
+}
+.ko-spiel .buehne { position: relative; }
+.ko-spiel .duell-feld { display: flex; justify-content: center; }
+.ko-spiel .duell-feld canvas { width: auto; max-width: none; }
+.ko-arena.laeuft .duell-live { opacity: 1; }
+.ko-arena.laeuft .duell-live i { animation: puls 1s infinite; }
+.ko-arena.gewinner-a .duell, .ko-arena.gewinner-b .duell {
+  border-color: #e8b800;
+  box-shadow: 0 0 0 2px rgba(242, 194, 0, 0.35), 0 8px 28px rgba(240, 190, 0, 0.28);
+}
+.ko-seite {
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75em;
+  padding: 0.9em 0.6em;
+  border: 1px solid var(--rand);
+  border-radius: 12px;
+  background: var(--karte);
+  transition: opacity 0.4s, box-shadow 0.4s, border-color 0.4s;
+}
+.ko-seite.sieger {
+  border-color: #e8b800;
+  box-shadow: 0 0 0 2px rgba(242, 194, 0, 0.35), 0 8px 28px rgba(240, 190, 0, 0.28);
+}
+.ko-seite.besiegt { opacity: 0.5; }
+.ko-team { display: flex; flex-direction: column; align-items: center; gap: 0.45em; text-align: center; }
+.ko-team-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  font-size: 1.3em;
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.ko-team-name .chip { width: 0.6em; height: 0.6em; }
+.ko-punkte {
+  position: relative;
+  font-size: 3em;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ko-arena.fuehrt-a .ko-seite[data-seite="a"] .ko-punkte,
+.ko-arena.fuehrt-b .ko-seite[data-seite="b"] .ko-punkte { color: var(--gut); }
+.ko-punkte.zaehlt { animation: zaehlt 0.4s ease-out; }
+@keyframes zaehlt { 40% { transform: scale(1.18); } }
+.ko-flug {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 0.15em;
+  font-size: 0.5em;
+  font-weight: 900;
+  color: var(--gut);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: flug 1.3s ease-out forwards;
+}
+.ko-flug.minus { color: var(--fehler); }
+@keyframes flug {
+  from { opacity: 0; transform: translateY(0.8em); }
+  20% { opacity: 1; }
+  to { opacity: 0; transform: translateY(-1.6em); }
+}
+.ko-block { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 0.4em; }
+.ko-block-titel {
+  font-size: 0.7em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gedaempft);
+}
+.ko-lieferung-titel { margin-top: 0.2em; letter-spacing: 0.06em; text-transform: none; }
+.ko-seite:not(.hat-lieferung) .ko-lieferung-titel { display: none; }
+.ko-ladung, .ko-lieferung {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 0.35em;
+  justify-content: center;
+}
+.ko-lieferung { font-size: 0.8em; }
+.ko-lieferung.neu .teil { animation: teil-pop 0.5s ease-out both; }
+@keyframes teil-pop { from { opacity: 0; transform: scale(1.6); } }
+.ko-depot { width: 100%; max-width: 11em; display: flex; flex-direction: column; gap: 0.25em; }
+.depot-zeile { display: flex; align-items: center; gap: 0.5em; font-variant-numeric: tabular-nums; }
+.depot-zeile .teil { width: 1.5em; height: 1.5em; font-size: 0.9em; }
+.depot-anzahl { color: var(--gedaempft); }
+.depot-summe { margin-left: auto; font-weight: 800; }
+.depot-summe.minus { color: var(--fehler); }
+.depot-leer { text-align: center; font-size: 0.8em; color: var(--gedaempft); }
+
+/* Ein Müllteil: Farbe und Zeichen wie auf dem Feld, darunter der Wert. */
+.teil {
+  --teil-farbe: #888;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 2.3em;
+  height: 2.3em;
+  border-radius: 0.35em;
+  line-height: 1;
+  color: #fff;
+  background: var(--teil-farbe);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  transition: transform 0.25s, opacity 0.4s, box-shadow 0.25s;
+}
+.teil b { font-size: 0.95em; }
+.teil small { margin-top: 0.15em; font-size: 0.58em; font-weight: 700; }
+.teil small.minus { color: #ffb4b4; }
+.teil.leer { background: transparent; box-shadow: inset 0 0 0 2px var(--rand); }
+.teil.abrechnen {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 3px #f5c542, 0 0 18px rgba(245, 197, 66, 0.8);
+}
+.teil.weg { opacity: 0.12; transform: scale(0.7); box-shadow: none; }
+.buehne-banner.abrechnung {
+  inset: auto 0 auto 0;
+  top: 0.8em;
+  padding: 0;
+  background: none;
+  pointer-events: none;
+}
+.ko-abrechnung-titel {
+  padding: 0.35em 1.1em;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0d1017;
+  background: #f5c542;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Siegerbanner über dem Feld. */
+.buehne-banner.ergebnis { background: radial-gradient(ellipse at center, rgba(16, 20, 30, 0.82), rgba(6, 8, 12, 0.9)); }
+.ko-sieger { display: flex; flex-direction: column; align-items: center; gap: 0.4em; animation: duell-rein 0.5s ease-out; }
+.ko-sieger-titel {
+  font-size: 0.9em;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #f5c542;
+}
+.ko-sieger .logo-quadrat { box-shadow: 0 0 40px rgba(245, 197, 66, 0.45); }
+.ko-sieger-name {
+  font-size: 2.8em;
+  font-weight: 900;
+  line-height: 1.1;
+  background: linear-gradient(90deg, #f5c542, #fff6c9, #f5c542);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ko-sieger-stand { font-size: 1.4em; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ko-sieger .klein { color: #cfd6e4; }
+.ko-sieger .ko-aktion .klein { color: #aab3c2; }
+
+/* Siegertreppe: 2 – 1 – 3. Die Stufen wachsen nacheinander von unten, zuletzt
+   der Sieger; dann kommen die Teams obendrauf. */
+.ko-podest { justify-content: center; }
+.podest {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1em;
+  padding-top: 1em;
+}
+.podest-platz { flex: 0 1 13em; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.podest-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4em;
+  margin-bottom: 0.6em;
+  text-align: center;
+  animation: duell-rein 0.5s ease-out both;
+  opacity: 0;
+}
+.podest-name { font-size: 1.4em; font-weight: 800; overflow-wrap: anywhere; }
+.p1 .podest-name { font-size: 2em; color: #c99a00; }
+.podest-pokal { font-size: 3.4em; line-height: 1; filter: drop-shadow(0 0 24px rgba(245, 197, 66, 0.7)); }
+.podest-block {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0.5em;
+  border-radius: 10px 10px 0 0;
+  font-size: 3.4em;
+  font-weight: 900;
+  color: rgba(0, 0, 0, 0.55);
+  transform-origin: bottom;
+  animation: stufe-hoch 0.7s ease-out both;
+}
+.p1 .podest-block { height: 3.6em; background: linear-gradient(#f8d465, #d9a91c); }
+.p2 .podest-block { height: 2.6em; background: linear-gradient(#e3e7ee, #a9b1bf); }
+.p3 .podest-block { height: 1.8em; background: linear-gradient(#e6a467, #a8652a); }
+.p3 .podest-block { animation-delay: 0.2s; }
+.p3 .podest-team { animation-delay: 0.7s; }
+.p2 .podest-block { animation-delay: 0.7s; }
+.p2 .podest-team { animation-delay: 1.2s; }
+.p1 .podest-block { animation-delay: 1.2s; }
+.p1 .podest-team { animation-delay: 1.8s; }
+@keyframes stufe-hoch { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+#konfetti { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+
+#fsr-feld-karte:fullscreen,
+#ko-buehne-karte:fullscreen {
+  background: var(--grund);
+  border-radius: 0;
+  padding: 18px;
+  overflow: auto;
+}
+/* Die Feldgröße setzt JavaScript; CSS darf sie im Vollbild nicht wieder auf die
+   volle Breite ziehen, sonst läuft das Feld unten aus dem Bild. */
+#fsr-feld-karte:fullscreen #fsr-feld,
+#ko-buehne-karte:fullscreen .duell-feld canvas {
+  width: auto;
+  max-width: 100%;
+}
+#fsr-feld-karte:fullscreen .spielfeld-huelle,
+#ko-buehne-karte:fullscreen .duell-feld {
+  display: flex;
+  justify-content: center;
+}
+/* Im Vollbild füllt die Show den Schirm; die Feldgröße rechnet felderAnpassen aus. */
+/* Im Vollbild füllt die Show genau den Rest unter der Leiste — egal, wie hoch die
+   Leiste gerade ist. */
+#ko-buehne-karte:fullscreen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 10px 18px;
+  overflow: hidden;
+}
+#ko-buehne-karte:fullscreen .buehne-kopf { margin-bottom: 6px; flex-wrap: nowrap; }
+#ko-buehne-karte:fullscreen .ko-flaeche { flex: 1 1 auto; min-height: 0; }
+
+
+/* ------------------------------------------------------------------ Beamer */
+
+/* Die Beamer-Ansicht dreht die Farben um. Sie tut das über die Variablen, damit
+   auch Knöpfe, Tabellen und Eingabefelder mitkommen — sonst stünde dunkler Text
+   auf dunklem Grund und die Knöpfe wären auf der Leinwand unsichtbar. */
+
+body.beamer {
+  --grund: #10131a;
+  --karte: #171b24;
+  --rand: #2a3040;
+  --text: #f2f4f8;
+  --gedaempft: #aab3c2;
+  --akzent: #5b8cf5;
+  --akzent-dunkel: #3f74e6;
+  --gut: #4ec97a;
+  --warnung: #e6a83a;
+  --fehler: #ef6b6b;
+  background: var(--grund);
+  color: var(--text);
+}
+/* Sonst bleibt unter einer kurzen Seite ein heller Streifen stehen. */
+html:has(> body.beamer) { background: #10131a; }
+body.beamer button:hover { border-color: #3c455a; background: #202634; }
+body.beamer button.haupt, body.beamer .reiter button.aktiv { color: #0d1017; }
+body.beamer code, body.beamer .balken { background: #232a38; }
+body.beamer table.tabelle th, body.beamer table.tabelle td,
+body.beamer .baum-paar { border-color: #2a3040; }
+body.beamer table.tabelle tr.hervor { background: #202a3d; }
+body.beamer .liste label { border-color: #232a38; }
+body.beamer .referenz-inhalt .beispiel, body.beamer .editor-bereich { background: #202634; }
+body.beamer .werkstatt, body.beamer .fsr { padding: 8px; }
+body.beamer #spielfeld, body.beamer #fsr-feld { background: var(--grund); }
+body.beamer .spieler-kachel { font-size: 1.5rem; background: #202634; border-color: var(--rand); }
+body.beamer .spieler-kachel .punkte { font-size: 3.2rem; }
+body.beamer .spieler-kachel .zeile { font-size: 1.05rem; color: var(--gedaempft); }
+body.beamer .teil-reihe, body.beamer .depot-liste { font-size: 20px; }
+body.beamer .kachel-titel { font-size: 0.9rem; }
+body.beamer .tickanzeige { font-size: 1.3rem; color: var(--gedaempft); }
+body.beamer .regelanzeige, body.beamer .ereignisse { display: none; }
+body.beamer .duell { background: #171b24; border-color: #2a3040; }
+body.beamer .duell-feld canvas { background: #10131a; }
+body.beamer .duell-fuss { font-size: 1rem; }
+body.beamer .logo-mittel { --logo-groesse: 30px; }
+body.beamer .logo-gross { --logo-groesse: 38px; }
+body.beamer .baum-spalte:not(.baum-ende) .baum-slot::after,
+body.beamer .baum-spalte + .baum-spalte .baum-slot::before { border-color: #4a5470; }
+body.beamer .p1 .podest-name { color: #f5c542; }
+body.beamer .baum-paar { border-color: #343c50; }
+body.beamer .ko-seite { background: #171b24; border-color: #2a3040; }
+body.beamer .ko-seite.sieger { border-color: #e8b800; }
+body.beamer .teil { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28); }
+body.beamer .teil.leer { box-shadow: inset 0 0 0 2px #343c50; }
+

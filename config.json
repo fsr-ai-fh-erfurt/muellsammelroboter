@@ -1,0 +1,106 @@
+{
+  "_hinweis": "Saemtliche Zahlenwerte des Spiels stehen hier. Im Code darf kein Spielwert fest verdrahtet sein.",
+  "fsr_passwort": "muell2026",
+  "server": {
+    "port": 8000,
+    "browser_oeffnen": true
+  },
+  "spiel": {
+    "breite": 24,
+    "hoehe": 24,
+    "runden_laenge": 400,
+    "depot_abstand": 2,
+    "kapazitaet": 6,
+    "sicht_radius": 6,
+    "karten": [
+      {
+        "name": "Freie Fläche",
+        "waende": []
+      },
+      {
+        "name": "Vier Ecken",
+        "waende": [[5, 5], [5, 6]]
+      },
+      {
+        "name": "Mitte",
+        "waende": [[11, 11]]
+      }
+    ]
+  },
+  "bots": {
+    "zeitlimit_ms": 100,
+    "start_zeitlimit_ms": 3000,
+    "kill_nach_ueberzogen": 20,
+    "neustarts_max": 3
+  },
+  "akku": {
+    "max": 100,
+    "start": 100,
+    "kosten_bewegung": 1,
+    "kosten_rammen": 5,
+    "langsam_ab": 30,
+    "langsam_modulo": 2,
+    "langsam_rest": 1,
+    "laden_prozent_pro_tick": 10,
+    "leer_verliert_ladung": true
+  },
+  "muell": {
+    "sorten": {
+      "papier": {
+        "anzeige": "Papiermuell",
+        "wert": 20,
+        "gewicht": 45
+      },
+      "bio": {
+        "anzeige": "Biomuell",
+        "wert": 36,
+        "gewicht": 30
+      },
+      "metall": {
+        "anzeige": "Metallschrott",
+        "wert": 80,
+        "gewicht": 18
+      },
+      "elektro": {
+        "anzeige": "Elektroschrott",
+        "wert": 160,
+        "gewicht": 7
+      }
+    },
+    "start_anzahl": 20,
+    "nachschub_intervall": 16,
+    "nachschub_anzahl": 1,
+    "max_auf_feld": 90,
+    "verfall_ticks": 150,
+    "verfall_strafe_max": 40
+  },
+  "radioaktiv": {
+    "anzeige": "Radioaktives Fass",
+    "anzahl_pro_spieler": 1,
+    "wert": -240
+  },
+  "zone": {
+    "groesse": 5,
+    "wechsel_alle": 60,
+    "faktor": 2
+  },
+  "rundenende": {
+    "positiv_teiler": 2
+  },
+  "presse": {
+    "anzahl": 3,
+    "dauer_ticks": 2,
+    "abschlag_prozent": 20
+  },
+  "sprache": {
+    "max_wechsel": 8
+  },
+  "turnier": {
+    "gruppen_groesse": 4,
+    "punkte_je_platz": [3, 2, 1, 0],
+    "gleichstand_wiederholungen": 3
+  },
+  "balance": {
+    "seeds": 30
+  }
+}
